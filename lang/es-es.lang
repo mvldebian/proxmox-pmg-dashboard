@@ -1,0 +1,184 @@
+# ============================================================
+# Español — Traducciones del PMG Dashboard
+# ============================================================
+
+app.title = Proxmox Mail Gateway
+app.subtitle = Panel de monitoreo en tiempo real
+app.uptime_tooltip = Tiempo activo del PMG
+
+header.users = Usuarios
+header.users_tooltip = Gestionar usuarios
+header.logout = Salir
+header.role_admin = ADMIN
+header.language = Idioma
+
+login.title = Acceso
+login.subtitle = Introduce tu correo corporativo para recibir el código de acceso
+login.email_label = Correo
+login.email_placeholder = tu.nombre@empresa.com
+login.submit = 📧 Enviar código de acceso
+login.admin_link = Acceso administrativo →
+login.err.expired = Sesión expirada. Inicia sesión nuevamente.
+login.err.blocked = Demasiados intentos. Inicia sesión nuevamente.
+login.err.admin_only = Acceso restringido a administradores.
+login.err.captcha = Verificación anti-bot fallida. Inténtalo de nuevo.
+login.err.email_invalid = Introduce un correo válido.
+login.err.email_unknown = Correo no registrado.
+login.err.admin_redirect = Los administradores deben usar /admin.
+login.err.user_disabled = Cuenta desactivada. Contacta al administrador.
+login.err.locked = Acceso bloqueado. Inténtalo en {minutes} minuto(s).
+login.err.smtp = Error al enviar el código por correo. Contacta al administrador.
+
+admin.title = Acceso Administrativo
+admin.badge = 🛡️ Solo administradores
+admin.username_label = Usuario administrador
+admin.password_label = Contraseña
+admin.submit = 🔐 Entrar como administrador
+admin.back = ← Acceso de usuario normal
+admin.err.expired = Sesión expirada.
+admin.err.blocked = Demasiados intentos. Inténtalo más tarde.
+admin.err.invalid = Credenciales inválidas.
+admin.err.no_password = Administrador sin contraseña. Contacta al soporte.
+admin.err.disabled = Cuenta desactivada.
+admin.err.locked = Cuenta bloqueada. Inténtalo en {minutes} minuto(s).
+admin.err.smtp = Error al enviar el código por correo.
+admin.err.captcha = Verificación anti-bot fallida. Inténtalo de nuevo.
+
+twofa.title = Verificación en dos pasos
+twofa.hello = Hola, {name}
+twofa.sent = Enviamos un código de 6 dígitos a
+twofa.code_label = Código de verificación
+twofa.submit = ✅ Verificar
+twofa.expires = El código expira en
+twofa.back = ← Volver
+twofa.err.format = Introduce el código de 6 dígitos enviado por correo.
+twofa.err.wrong = Código incorrecto. Intentos restantes: {attempts}
+
+dash.period.day = Diario
+dash.period.month = Mensual
+dash.period.semester = Semestral
+dash.period.year = Anual
+
+dash.period.day.label = Día actual ({date})
+dash.period.month.label = Mes actual ({date})
+dash.period.semester.label = Últimos 6 meses
+dash.period.year.label = Año actual ({year})
+
+dash.system.cpu = CPU
+dash.system.ram = RAM
+dash.system.swap = Swap
+dash.system.disk = Disco
+dash.system.traffic_in = Tráfico In
+dash.system.traffic_out = Tráfico Out
+dash.system.total_period = total en el período
+
+dash.flow.title = Flujo de Mensajes
+dash.flow.received = Recibidos
+dash.flow.sent = Enviados
+dash.flow.spam_in = Spam In
+dash.flow.spam_out = Spam Out
+dash.flow.virus_in = Virus In
+dash.flow.virus_out = Virus Out
+dash.flow.junk_in = Junk In
+dash.flow.junk_out = Junk Out
+dash.flow.greylist = Greylist
+dash.flow.spf = SPF
+dash.flow.rbl = RBL
+dash.flow.pregreet = PREGREET
+dash.flow.spam_rate = Tasa Spam
+dash.flow.avg_time = T. Medio
+
+dash.chart.title = Volumen en las últimas 24 horas
+dash.chart.received = Recibidos
+dash.chart.spam = Spam
+dash.chart.spam_rate = Tasa Spam
+dash.chart.pregreet_rate = Tasa PreGREET
+dash.chart.volume = Volumen
+dash.chart.rate = Tasa (%)
+dash.chart.hour = Hora
+
+dash.top.senders = Top {count} Remitentes (Correo)
+dash.top.domains = Top {count} Dominios Remitentes
+dash.top.sender = Remitente
+dash.top.domain = Dominio
+dash.top.emails = Correos
+dash.top.virus = Virus
+dash.top.received = Recibidos
+dash.top.spam = Spam
+dash.top.empty = Sin datos en el período
+dash.top.loading = Cargando...
+
+dash.status.connected = Conectado
+dash.status.loading = Cargando...
+dash.status.error = Error
+
+dash.footer.pmg = PMG
+dash.footer.public_ip = IP Público
+dash.footer.relay_ext = Relay Ext
+dash.footer.relay_int = Relay Int
+dash.footer.updated = Actualizado
+dash.footer.refresh = Refresh
+
+dash.port.open = Abierto
+dash.port.closed = Cerrado
+dash.port.checking = ...
+
+users.title = Gestión de Usuarios
+users.count = {count} usuario(s)
+users.new = ➕ Nuevo usuario
+users.back = ← Dashboard
+users.th.user = Usuario
+users.th.name = Nombre
+users.th.email = Correo (2FA)
+users.th.profile = Perfil
+users.th.status = Estado
+users.th.last_login = Último acceso
+users.th.actions = Acciones
+users.badge.admin = ADMIN
+users.badge.operator = OPERADOR
+users.badge.active = Activo
+users.badge.inactive = Inactivo
+users.badge.locked = Bloqueado
+users.never = Nunca
+users.edit_tooltip = Editar
+users.delete_tooltip = Eliminar
+users.delete_confirm = ¿Eliminar al usuario {username}?
+users.empty = Ningún usuario registrado.
+
+edit.title.new = Nuevo Usuario
+edit.title.edit = Editar Usuario
+edit.name = Nombre completo
+edit.email = Correo
+edit.email_hint = (recibirá el código 2FA)
+edit.username = Usuario
+edit.username_hint = (opcional para operador — generado desde el correo)
+edit.profile = Perfil de acceso
+edit.profile.operator = 👤 Operador
+edit.profile.operator_hint = (login por correo)
+edit.profile.admin = 🛡️ Administrador
+edit.profile.admin_hint = (/admin)
+edit.active = Cuenta activa (permite login)
+edit.language = Idioma
+edit.language_hint = (idioma preferido del usuario)
+edit.password.new = Establecer contraseña de administrador
+edit.password.change = Cambiar contraseña (dejar en blanco para mantener)
+edit.password = Contraseña
+edit.password_optional = (opcional)
+edit.confirm = Confirmar contraseña
+edit.submit.new = ➕ Crear usuario
+edit.submit.save = 💾 Guardar cambios
+edit.back = ← Volver
+edit.info = Los operadores inician sesión solo con su correo registrado. Los administradores inician sesión en /admin con usuario y contraseña.
+edit.err.username_short = El usuario debe tener al menos 3 caracteres.
+edit.err.name_required = El nombre completo es obligatorio.
+edit.err.email_invalid = Correo inválido.
+edit.err.last_admin = No se puede desactivar el único administrador activo.
+edit.err.password_short_admin = El administrador necesita una contraseña de al menos 8 caracteres.
+edit.err.password_short = La contraseña del administrador debe tener al menos 8 caracteres.
+edit.err.password_mismatch = Las contraseñas no coinciden.
+edit.err.username_taken = Este usuario ya está en uso.
+edit.err.email_taken = Este correo ya está registrado.
+edit.err.save = Error al guardar: {error}
+
+lang.changed = Idioma cambiado correctamente
+lang.select = Seleccionar idioma

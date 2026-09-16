@@ -1,0 +1,186 @@
+# ============================================================
+# English (US) — PMG Dashboard translations
+# Format: key = value
+# Use {variable} for placeholders
+# ============================================================
+
+app.title = Proxmox Mail Gateway
+app.subtitle = Real-time monitoring panel
+app.uptime_tooltip = PMG uptime
+
+header.users = Users
+header.users_tooltip = Manage users
+header.logout = Logout
+header.role_admin = ADMIN
+header.language = Language
+
+login.title = Sign in
+login.subtitle = Enter your corporate email to receive the access code
+login.email_label = Email
+login.email_placeholder = your.name@company.com
+login.submit = 📧 Send access code
+login.admin_link = Administrative access →
+login.err.expired = Session expired. Please sign in again.
+login.err.blocked = Too many attempts. Please sign in again.
+login.err.admin_only = Access restricted to administrators.
+login.err.captcha = Anti-bot verification failed. Please try again.
+login.err.email_invalid = Please enter a valid email.
+login.err.email_unknown = Email not registered.
+login.err.admin_redirect = Administrators must use /admin.
+login.err.user_disabled = Account disabled. Contact the administrator.
+login.err.locked = Access locked. Try again in {minutes} minute(s).
+login.err.smtp = Failed to send the code by email. Contact the administrator.
+
+admin.title = Administrative Access
+admin.badge = 🛡️ Administrators only
+admin.username_label = Administrator username
+admin.password_label = Password
+admin.submit = 🔐 Sign in as administrator
+admin.back = ← Regular user access
+admin.err.expired = Session expired.
+admin.err.blocked = Too many attempts. Please try again later.
+admin.err.invalid = Invalid credentials.
+admin.err.no_password = Administrator without password configured. Contact support.
+admin.err.disabled = Account disabled.
+admin.err.locked = Account locked. Try again in {minutes} minute(s).
+admin.err.smtp = Failed to send the code by email.
+admin.err.captcha = Anti-bot verification failed. Please try again.
+
+twofa.title = Two-factor verification
+twofa.hello = Hello, {name}
+twofa.sent = We sent a 6-digit code to
+twofa.code_label = Verification code
+twofa.submit = ✅ Verify
+twofa.expires = Code expires in
+twofa.back = ← Back
+twofa.err.format = Enter the 6-digit code sent by email.
+twofa.err.wrong = Incorrect code. Remaining attempts: {attempts}
+
+dash.period.day = Daily
+dash.period.month = Monthly
+dash.period.semester = Semiannual
+dash.period.year = Annual
+
+dash.period.day.label = Current day ({date})
+dash.period.month.label = Current month ({date})
+dash.period.semester.label = Last 6 months
+dash.period.year.label = Current year ({year})
+
+dash.system.cpu = CPU
+dash.system.ram = RAM
+dash.system.swap = Swap
+dash.system.disk = Disk
+dash.system.traffic_in = Traffic In
+dash.system.traffic_out = Traffic Out
+dash.system.total_period = total in period
+
+dash.flow.title = Message Flow
+dash.flow.received = Received
+dash.flow.sent = Sent
+dash.flow.spam_in = Spam In
+dash.flow.spam_out = Spam Out
+dash.flow.virus_in = Virus In
+dash.flow.virus_out = Virus Out
+dash.flow.junk_in = Junk In
+dash.flow.junk_out = Junk Out
+dash.flow.greylist = Greylist
+dash.flow.spf = SPF
+dash.flow.rbl = RBL
+dash.flow.pregreet = PREGREET
+dash.flow.spam_rate = Spam Rate
+dash.flow.avg_time = Avg. Time
+
+dash.chart.title = Volume in the last 24 hours
+dash.chart.received = Received
+dash.chart.spam = Spam
+dash.chart.spam_rate = Spam Rate
+dash.chart.pregreet_rate = PreGREET Rate
+dash.chart.volume = Volume
+dash.chart.rate = Rate (%)
+dash.chart.hour = Hour
+
+dash.top.senders = Top {count} Senders (Email)
+dash.top.domains = Top {count} Sender Domains
+dash.top.sender = Sender
+dash.top.domain = Domain
+dash.top.emails = Emails
+dash.top.virus = Virus
+dash.top.received = Received
+dash.top.spam = Spam
+dash.top.empty = No data for this period
+dash.top.loading = Loading...
+
+dash.status.connected = Connected
+dash.status.loading = Loading...
+dash.status.error = Error
+
+dash.footer.pmg = PMG
+dash.footer.public_ip = Public IP
+dash.footer.relay_ext = Ext Relay
+dash.footer.relay_int = Int Relay
+dash.footer.updated = Updated
+dash.footer.refresh = Refresh
+
+dash.port.open = Open
+dash.port.closed = Closed
+dash.port.checking = ...
+
+users.title = User Management
+users.count = {count} user(s)
+users.new = ➕ New user
+users.back = ← Dashboard
+users.th.user = User
+users.th.name = Name
+users.th.email = Email (2FA)
+users.th.profile = Profile
+users.th.status = Status
+users.th.last_login = Last login
+users.th.actions = Actions
+users.badge.admin = ADMIN
+users.badge.operator = OPERATOR
+users.badge.active = Active
+users.badge.inactive = Inactive
+users.badge.locked = Locked
+users.never = Never
+users.edit_tooltip = Edit
+users.delete_tooltip = Delete
+users.delete_confirm = Delete user {username}?
+users.empty = No users registered.
+
+edit.title.new = New User
+edit.title.edit = Edit User
+edit.name = Full name
+edit.email = Email
+edit.email_hint = (will receive the 2FA code)
+edit.username = Username
+edit.username_hint = (optional for operator — generated from email)
+edit.profile = Access profile
+edit.profile.operator = 👤 Operator
+edit.profile.operator_hint = (login by email)
+edit.profile.admin = 🛡️ Administrator
+edit.profile.admin_hint = (/admin)
+edit.active = Active account (allows login)
+edit.language = Language
+edit.language_hint = (user's preferred language)
+edit.password.new = Set administrator password
+edit.password.change = Change password (leave blank to keep current)
+edit.password = Password
+edit.password_optional = (optional)
+edit.confirm = Confirm password
+edit.submit.new = ➕ Create user
+edit.submit.save = 💾 Save changes
+edit.back = ← Back
+edit.info = Operators log in with their registered email only. Administrators log in at /admin with username and password.
+edit.err.username_short = Username must have at least 3 characters.
+edit.err.name_required = Full name is required.
+edit.err.email_invalid = Invalid email.
+edit.err.last_admin = Cannot deactivate the only active administrator.
+edit.err.password_short_admin = Administrator needs a password with at least 8 characters.
+edit.err.password_short = Administrator password must have at least 8 characters.
+edit.err.password_mismatch = Passwords do not match.
+edit.err.username_taken = This username is already in use.
+edit.err.email_taken = This email is already registered.
+edit.err.save = Error saving: {error}
+
+lang.changed = Language changed successfully
+lang.select = Select language
