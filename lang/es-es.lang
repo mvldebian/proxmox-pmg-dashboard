@@ -55,11 +55,12 @@ twofa.err.format = Introduce el código de 6 dígitos enviado por correo.
 twofa.err.wrong = Código incorrecto. Intentos restantes: {attempts}
 
 dash.period.day = Diario
+dash.period.week = Semanal
 dash.period.month = Mensual
 dash.period.semester = Semestral
 dash.period.year = Anual
-
 dash.period.day.label = Día actual ({date})
+dash.period.week.label = Últimos 7 días
 dash.period.month.label = Mes actual ({date})
 dash.period.semester.label = Últimos 6 meses
 dash.period.year.label = Año actual ({year})

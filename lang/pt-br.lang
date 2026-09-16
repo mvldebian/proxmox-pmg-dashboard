@@ -63,11 +63,12 @@ twofa.err.wrong = Código incorreto. Tentativas restantes: {attempts}
 
 # ---------- Dashboard ----------
 dash.period.day = Diário
+dash.period.week = Semanal
 dash.period.month = Mensal
 dash.period.semester = Semestral
 dash.period.year = Anual
-
 dash.period.day.label = Dia atual ({date})
+dash.period.week.label = Últimos 7 dias
 dash.period.month.label = Mês atual ({date})
 dash.period.semester.label = Últimos 6 meses
 dash.period.year.label = Ano atual ({year})

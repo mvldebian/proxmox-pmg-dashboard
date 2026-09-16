@@ -93,6 +93,10 @@ $jsStrings = [
             <button class="period-btn" data-period="day" role="tab">
                 <span class="icon">📅</span><span class="txt"><?= htmlspecialchars(t('dash.period.day')) ?></span>
             </button>
+            <!-- ⬇️ Novo botão: Semanal -->
+            <button class="period-btn" data-period="week" role="tab">
+                <span class="icon">📈</span><span class="txt"><?= htmlspecialchars(t('dash.period.week')) ?></span>
+            </button>
             <button class="period-btn" data-period="month" role="tab">
                 <span class="icon">📆</span><span class="txt"><?= htmlspecialchars(t('dash.period.month')) ?></span>
             </button>
