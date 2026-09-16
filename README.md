@@ -48,6 +48,7 @@ FLUSH PRIVILEGES;
 ## Criar usuário de consulta a API do PMG
 
 pmgsh create /access/users --userid dashboard@pmg --role audit --password 'SenhaForte'
+
 pmgsh set /access/users/dashboard@pmg --enable 1
 
 # Limpar cache do gráfico
