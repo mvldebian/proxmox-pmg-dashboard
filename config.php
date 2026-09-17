@@ -66,15 +66,44 @@ return [
         'verify_url' => 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
     ],
 
-    'smtp' => [
-        'host'       => 'vps.suaempresa.com.br',
-        'port'       => 587,
-        'encryption' => 'tls',
-        'auth'       => true,
-        'username'   => 'alertas@suaempresa.com.br',
-        'password'   => 'SenhaForte',
-        'from_email' => 'alertas@suaempresa.com.br',
+        // =====================================================================
+    //  ENVIO DE E-MAIL
+    //  Escolha o driver: 'smtp' (PHPMailer) ou 'mailjet' (API v3.1)
+    // =====================================================================
+    'mail' => [
+        // 'smtp' ou 'mailjet'
+        'driver'     => 'smtp',
+
+        // Remetente padrão (usado por ambos os drivers)
+        'from_email' => 'no-reply@empresa.com.br',
         'from_name'  => 'PMG Dashboard',
+
+        // ========== Driver SMTP (usado se driver = 'smtp') ==========
+        'smtp' => [
+            'host'       => 'smtp.empresa.com.br',
+            'port'       => 587,
+            'encryption' => 'tls',   // 'tls' ou 'ssl'
+            'auth'       => true,
+            'username'   => 'no-reply@empresa.com.br',
+            'password'   => 'SenhaDoSMTP',
+        ],
+
+        // ========== Driver Mailjet (usado se driver = 'mailjet') ==========
+        'mailjet' => [
+            // Credenciais de https://app.mailjet.com/account/apikeys
+            'api_key'    => 'SUA_API_KEY_MAILJET',
+            'secret_key' => 'SUA_SECRET_KEY_MAILJET',
+
+            // Sandbox não entrega e-mails (útil para testes).
+            // Coloque false em produção.
+            'sandbox'    => false,
+
+            // Timeout HTTP em segundos
+            'timeout'    => 15,
+
+            // Endpoint da API (raramente precisa mudar)
+            'endpoint'   => 'https://api.mailjet.com/v3.1/send',
+        ],
     ],
 
     'security' => [
