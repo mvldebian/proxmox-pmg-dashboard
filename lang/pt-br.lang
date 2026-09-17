@@ -8,6 +8,7 @@
 app.title = Proxmox Mail Gateway
 app.subtitle = Painel de monitoramento em tempo real
 app.uptime_tooltip = Tempo de atividade do PMG
+alert.sound_toggle = Ativar/desativar som de alerta
 
 # ---------- Header ----------
 header.users = Usuários
@@ -15,6 +16,8 @@ header.users_tooltip = Gerenciar usuários
 header.logout = Sair
 header.role_admin = ADMIN
 header.language = Idioma
+header.incidents = Incidentes
+header.incidents_tooltip = Ver histórico de incidentes
 
 # ---------- Login (operador) ----------
 login.title = Acesso
@@ -61,7 +64,7 @@ twofa.back = ← Voltar
 twofa.err.format = Digite o código de 6 dígitos enviado por e-mail.
 twofa.err.wrong = Código incorreto. Tentativas restantes: {attempts}
 
-# ---------- Dashboard ----------
+# ---------- Dashboard: Períodos ----------
 dash.period.day = Diário
 dash.period.week = Semanal
 dash.period.month = Mensal
@@ -73,6 +76,7 @@ dash.period.month.label = Mês atual ({date})
 dash.period.semester.label = Últimos 6 meses
 dash.period.year.label = Ano atual ({year})
 
+# ---------- Dashboard: Sistema ----------
 dash.system.cpu = CPU
 dash.system.ram = RAM
 dash.system.swap = Swap
@@ -81,6 +85,7 @@ dash.system.traffic_in = Tráfego In
 dash.system.traffic_out = Tráfego Out
 dash.system.total_period = total no período
 
+# ---------- Dashboard: Fluxo ----------
 dash.flow.title = Fluxo de Mensagens
 dash.flow.received = Recebidos
 dash.flow.sent = Enviados
@@ -97,6 +102,7 @@ dash.flow.pregreet = PREGREET
 dash.flow.spam_rate = Taxa Spam
 dash.flow.avg_time = T. Médio
 
+# ---------- Dashboard: Gráfico ----------
 dash.chart.title = Volume nas últimas 24 horas
 dash.chart.received = Recebidos
 dash.chart.spam = Spam
@@ -106,6 +112,7 @@ dash.chart.volume = Volume
 dash.chart.rate = Taxa (%)
 dash.chart.hour = Hora
 
+# ---------- Dashboard: Top ----------
 dash.top.senders = Top {count} Remetentes (E-mail)
 dash.top.domains = Top {count} Domínios Remetentes
 dash.top.sender = Remetente
@@ -117,22 +124,47 @@ dash.top.spam = Spam
 dash.top.empty = Sem dados no período
 dash.top.loading = Carregando...
 
+# ---------- Dashboard: Status ----------
 dash.status.connected = Conectado
 dash.status.loading = Carregando...
 dash.status.error = Erro
 
+# ---------- Dashboard: Rodapé ----------
 dash.footer.pmg = PMG
 dash.footer.public_ip = IP Público
 dash.footer.relay_ext = Relay Ext
 dash.footer.relay_int = Relay Int
 dash.footer.updated = Atualizado
 dash.footer.refresh = Refresh
-
 dash.port.open = Aberta
 dash.port.closed = Fechada
 dash.port.checking = ...
 
-# ---------- Users ----------
+# ---------- Dashboard: Serviços ----------
+dash.services.label = Serviços
+dash.services.tooltip = Status dos serviços do PMG
+dash.services.running = Em execução
+dash.services.stopped = Parado
+
+# ---------- Incidentes ----------
+inc.title = Incidentes
+inc.subtitle = Histórico de eventos e alertas do PMG
+inc.back = ← Dashboard
+inc.filter.all = Todos
+inc.filter.active = Ativos
+inc.filter.resolved = Resolvidos
+inc.th.started = Início
+inc.th.duration = Duração
+inc.th.severity = Severidade
+inc.th.subject = Descrição
+inc.th.status = Estado
+inc.state.active = ATIVO
+inc.state.resolved = RESOLVIDO
+inc.resolve = Resolver
+inc.confirm_resolve = Marcar este incidente como resolvido?
+inc.empty = Nenhum incidente registrado. Tudo funcionando normalmente. ✨
+
+# ---------- Usuários ----------
 users.title = Gerenciamento de Usuários
 users.count = {count} usuário(s)
 users.new = ➕ Novo usuário
@@ -155,7 +187,7 @@ users.delete_tooltip = Excluir
 users.delete_confirm = Excluir o usuário {username}?
 users.empty = Nenhum usuário cadastrado.
 
-# ---------- Edit user ----------
+# ---------- Editar usuário ----------
 edit.title.new = Novo Usuário
 edit.title.edit = Editar Usuário
 edit.name = Nome completo
@@ -191,6 +223,6 @@ edit.err.username_taken = Este usuário já está em uso.
 edit.err.email_taken = Este e-mail já está cadastrado.
 edit.err.save = Erro ao salvar: {error}
 
-# ---------- Language ----------
+# ---------- Idioma ----------
 lang.changed = Idioma alterado com sucesso
 lang.select = Selecionar idioma

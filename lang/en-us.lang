@@ -4,16 +4,22 @@
 # Use {variable} for placeholders
 # ============================================================
 
+# ---------- App ----------
 app.title = Proxmox Mail Gateway
 app.subtitle = Real-time monitoring panel
 app.uptime_tooltip = PMG uptime
+alert.sound_toggle = Enable/disable alert sound
 
+# ---------- Header ----------
 header.users = Users
 header.users_tooltip = Manage users
 header.logout = Logout
 header.role_admin = ADMIN
 header.language = Language
+header.incidents = Incidents
+header.incidents_tooltip = View incident history
 
+# ---------- Login ----------
 login.title = Sign in
 login.subtitle = Enter your corporate email to receive the access code
 login.email_label = Email
@@ -31,6 +37,7 @@ login.err.user_disabled = Account disabled. Contact the administrator.
 login.err.locked = Access locked. Try again in {minutes} minute(s).
 login.err.smtp = Failed to send the code by email. Contact the administrator.
 
+# ---------- Admin login ----------
 admin.title = Administrative Access
 admin.badge = 🛡️ Administrators only
 admin.username_label = Administrator username
@@ -46,6 +53,7 @@ admin.err.locked = Account locked. Try again in {minutes} minute(s).
 admin.err.smtp = Failed to send the code by email.
 admin.err.captcha = Anti-bot verification failed. Please try again.
 
+# ---------- 2FA ----------
 twofa.title = Two-factor verification
 twofa.hello = Hello, {name}
 twofa.sent = We sent a 6-digit code to
@@ -56,6 +64,7 @@ twofa.back = ← Back
 twofa.err.format = Enter the 6-digit code sent by email.
 twofa.err.wrong = Incorrect code. Remaining attempts: {attempts}
 
+# ---------- Dashboard: Periods ----------
 dash.period.day = Daily
 dash.period.week = Weekly
 dash.period.month = Monthly
@@ -67,6 +76,7 @@ dash.period.month.label = Current month ({date})
 dash.period.semester.label = Last 6 months
 dash.period.year.label = Current year ({year})
 
+# ---------- Dashboard: System ----------
 dash.system.cpu = CPU
 dash.system.ram = RAM
 dash.system.swap = Swap
@@ -75,6 +85,7 @@ dash.system.traffic_in = Traffic In
 dash.system.traffic_out = Traffic Out
 dash.system.total_period = total in period
 
+# ---------- Dashboard: Flow ----------
 dash.flow.title = Message Flow
 dash.flow.received = Received
 dash.flow.sent = Sent
@@ -91,6 +102,7 @@ dash.flow.pregreet = PREGREET
 dash.flow.spam_rate = Spam Rate
 dash.flow.avg_time = Avg. Time
 
+# ---------- Dashboard: Chart ----------
 dash.chart.title = Volume in the last 24 hours
 dash.chart.received = Received
 dash.chart.spam = Spam
@@ -100,6 +112,7 @@ dash.chart.volume = Volume
 dash.chart.rate = Rate (%)
 dash.chart.hour = Hour
 
+# ---------- Dashboard: Top ----------
 dash.top.senders = Top {count} Senders (Email)
 dash.top.domains = Top {count} Sender Domains
 dash.top.sender = Sender
@@ -111,21 +124,47 @@ dash.top.spam = Spam
 dash.top.empty = No data for this period
 dash.top.loading = Loading...
 
+# ---------- Dashboard: Status ----------
 dash.status.connected = Connected
 dash.status.loading = Loading...
 dash.status.error = Error
 
+# ---------- Dashboard: Footer ----------
 dash.footer.pmg = PMG
 dash.footer.public_ip = Public IP
 dash.footer.relay_ext = Ext Relay
 dash.footer.relay_int = Int Relay
 dash.footer.updated = Updated
 dash.footer.refresh = Refresh
-
 dash.port.open = Open
 dash.port.closed = Closed
 dash.port.checking = ...
 
+# ---------- Dashboard: Services ----------
+dash.services.label = Services
+dash.services.tooltip = PMG service status
+dash.services.running = Running
+dash.services.stopped = Stopped
+
+# ---------- Incidents ----------
+inc.title = Incidents
+inc.subtitle = PMG events and alert history
+inc.back = ← Dashboard
+inc.filter.all = All
+inc.filter.active = Active
+inc.filter.resolved = Resolved
+inc.th.started = Started
+inc.th.duration = Duration
+inc.th.severity = Severity
+inc.th.subject = Description
+inc.th.status = Status
+inc.state.active = ACTIVE
+inc.state.resolved = RESOLVED
+inc.resolve = Resolve
+inc.confirm_resolve = Mark this incident as resolved?
+inc.empty = No incidents recorded. Everything is running normally. ✨
+
+# ---------- Users ----------
 users.title = User Management
 users.count = {count} user(s)
 users.new = ➕ New user
@@ -148,6 +187,7 @@ users.delete_tooltip = Delete
 users.delete_confirm = Delete user {username}?
 users.empty = No users registered.
 
+# ---------- Edit user ----------
 edit.title.new = New User
 edit.title.edit = Edit User
 edit.name = Full name
@@ -183,5 +223,6 @@ edit.err.username_taken = This username is already in use.
 edit.err.email_taken = This email is already registered.
 edit.err.save = Error saving: {error}
 
+# ---------- Language ----------
 lang.changed = Language changed successfully
 lang.select = Select language

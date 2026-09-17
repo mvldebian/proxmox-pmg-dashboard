@@ -6,7 +6,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// ⬇️ 'week' adicionado
 const PMG_PERIODS    = ['day', 'week', 'month', 'semester', 'year'];
 const PMG_TOP_LIMIT  = 15;
 const PMG_HOURLY_TTL = 600;
@@ -16,7 +15,10 @@ $__lang_cache = null;
 function pmg_config(): array
 {
     static $cfg = null;
-    if ($cfg === null) $cfg = require __DIR__ . '/config.php';
+    if ($cfg === null) {
+        $cfg = require __DIR__ . '/config.php';
+        date_default_timezone_set($cfg['dashboard']['timezone'] ?? 'UTC');
+    }
     return $cfg;
 }
 
@@ -36,7 +38,7 @@ function lang_default(): string
 function lang_parse_file(string $path): array
 {
     if (!is_file($path)) return [];
-    $out   = [];
+    $out = [];
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     if ($lines === false) return [];
     foreach ($lines as $line) {
@@ -242,45 +244,197 @@ function auth_generate_code(): string
     return str_pad((string)random_int(0, 999999), 6, '0', STR_PAD_LEFT);
 }
 
-function auth_send_2fa_email(string $to, string $code, string $userName = ''): bool
+/* =====================================================================
+ *  ENVIO DE E-MAIL (abstração SMTP | Mailjet)
+ * ===================================================================== */
+
+/**
+ * Retorna a configuração de e-mail (novo formato 'mail' ou fallback para 'smtp').
+ */
+function mail_config(): array
 {
     $cfg = pmg_config();
-    $smtp = $cfg['smtp'];
+
+    if (isset($cfg['mail']) && is_array($cfg['mail'])) {
+        return $cfg['mail'];
+    }
+
+    // Fallback: formato antigo (top-level 'smtp')
+    $legacy = $cfg['smtp'] ?? [];
+    return [
+        'driver'     => 'smtp',
+        'from_email' => $legacy['from_email'] ?? '',
+        'from_name'  => $legacy['from_name']  ?? 'PMG Dashboard',
+        'smtp'       => $legacy,
+        'mailjet'    => [],
+    ];
+}
+
+/**
+ * Envia um e-mail usando o driver configurado (smtp|mailjet).
+ */
+function mail_send(string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody = ''): bool
+{
+    $cfg    = mail_config();
+    $driver = strtolower($cfg['driver'] ?? 'smtp');
+
+    $fromEmail = $cfg['from_email'] ?? '';
+    $fromName  = $cfg['from_name']  ?? 'PMG Dashboard';
+
+    if ($fromEmail === '' || !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)) {
+        error_log('[MAIL] from_email inválido no config.');
+        return false;
+    }
+    if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+        error_log('[MAIL] Destinatário inválido: ' . $toEmail);
+        return false;
+    }
+
+    if ($textBody === '') {
+        $textBody = trim(preg_replace('/\s+/', ' ', strip_tags($htmlBody)));
+    }
+
+    switch ($driver) {
+        case 'mailjet':
+            return mail_send_mailjet($cfg, $toEmail, $toName, $subject, $htmlBody, $textBody, $fromEmail, $fromName);
+        case 'smtp':
+        default:
+            return mail_send_smtp($cfg, $toEmail, $toName, $subject, $htmlBody, $textBody, $fromEmail, $fromName);
+    }
+}
+
+/**
+ * Driver SMTP via PHPMailer.
+ */
+function mail_send_smtp(array $cfg, string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody, string $fromEmail, string $fromName): bool
+{
+    $smtp = $cfg['smtp'] ?? [];
+    if (empty($smtp['host'])) {
+        error_log('[MAIL SMTP] Configuração smtp.host ausente.');
+        return false;
+    }
+
     $mail = new PHPMailer(true);
     try {
         $mail->isSMTP();
         $mail->Host     = $smtp['host'];
-        $mail->Port     = (int)$smtp['port'];
+        $mail->Port     = (int)($smtp['port'] ?? 587);
         $mail->SMTPAuth = !empty($smtp['auth']);
-        $mail->Username = $smtp['username'];
-        $mail->Password = $smtp['password'];
-        $mail->SMTPSecure = strtolower($smtp['encryption']) === 'ssl'
+        $mail->Username = $smtp['username'] ?? '';
+        $mail->Password = $smtp['password'] ?? '';
+        $mail->SMTPSecure = strtolower($smtp['encryption'] ?? 'tls') === 'ssl'
             ? PHPMailer::ENCRYPTION_SMTPS
             : PHPMailer::ENCRYPTION_STARTTLS;
+
         $mail->CharSet = 'UTF-8';
-        $mail->setFrom($smtp['from_email'], $smtp['from_name']);
-        $mail->addAddress($to, $userName);
-        $greeting = $userName !== '' ? 'Olá, <strong>' . htmlspecialchars($userName) . '</strong>!' : 'Olá!';
+        $mail->setFrom($fromEmail, $fromName);
+        $mail->addAddress($toEmail, $toName);
+
         $mail->isHTML(true);
-        $mail->Subject = t('twofa.title') . ' — ' . t('app.title');
-        $mail->Body    = '
-            <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;
-                        padding:24px;background:#0f172a;color:#e2e8f0;border-radius:12px">
-                <h2 style="color:#E57000;margin-top:0">🔐 ' . htmlspecialchars(t('twofa.code_label')) . '</h2>
-                <p>' . $greeting . '</p>
-                <div style="font-size:2.4em;font-weight:700;letter-spacing:.2em;
-                            text-align:center;padding:20px;background:rgba(229,112,0,.15);
-                            border:1px solid rgba(229,112,0,.4);border-radius:8px;
-                            color:#E57000;margin:20px 0">' . htmlspecialchars($code) . '</div>
-                <p style="color:#94a3b8;font-size:.9em">' . htmlspecialchars(t('twofa.expires')) . ' 5 min.</p>
-            </div>';
-        $mail->AltBody = t('twofa.code_label') . ": {$code}";
+        $mail->Subject = $subject;
+        $mail->Body    = $htmlBody;
+        $mail->AltBody = $textBody;
+
         $mail->send();
         return true;
     } catch (Exception $e) {
-        error_log('[2FA] ' . $mail->ErrorInfo);
+        error_log('[MAIL SMTP] ' . $mail->ErrorInfo);
         return false;
     }
+}
+
+/**
+ * Driver Mailjet (API v3.1).
+ */
+function mail_send_mailjet(array $cfg, string $toEmail, string $toName, string $subject, string $htmlBody, string $textBody, string $fromEmail, string $fromName): bool
+{
+    $mj = $cfg['mailjet'] ?? [];
+    if (empty($mj['api_key']) || empty($mj['secret_key'])) {
+        error_log('[MAIL MAILJET] api_key/secret_key ausentes.');
+        return false;
+    }
+
+    $endpoint = $mj['endpoint'] ?? 'https://api.mailjet.com/v3.1/send';
+    $timeout  = (int)($mj['timeout'] ?? 15);
+    $sandbox  = !empty($mj['sandbox']);
+
+    $payload = [
+        'Messages' => [[
+            'From'     => ['Email' => $fromEmail, 'Name' => $fromName],
+            'To'       => [['Email' => $toEmail, 'Name' => $toName ?: $toEmail]],
+            'Subject'  => $subject,
+            'TextPart' => $textBody,
+            'HTMLPart' => $htmlBody,
+        ]],
+    ];
+    if ($sandbox) {
+        $payload['SandboxMode'] = true;
+    }
+
+    $ch = curl_init($endpoint);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_UNICODE),
+        CURLOPT_USERPWD        => $mj['api_key'] . ':' . $mj['secret_key'],
+        CURLOPT_HTTPAUTH       => CURLAUTH_BASIC,
+        CURLOPT_TIMEOUT        => $timeout,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Accept: application/json',
+        ],
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr  = curl_error($ch);
+    curl_close($ch);
+
+    if ($response === false) {
+        error_log('[MAIL MAILJET] cURL erro: ' . $curlErr);
+        return false;
+    }
+    if ($httpCode !== 200) {
+        error_log('[MAIL MAILJET] HTTP ' . $httpCode . ': ' . substr($response, 0, 500));
+        return false;
+    }
+
+    $json = json_decode($response, true);
+    if (isset($json['Messages'][0]['Status']) && $json['Messages'][0]['Status'] === 'success') {
+        return true;
+    }
+
+    error_log('[MAIL MAILJET] Resposta inesperada: ' . substr($response, 0, 500));
+    return false;
+}
+
+/**
+ * Envia o código 2FA por e-mail.
+ */
+function auth_send_2fa_email(string $to, string $code, string $userName = ''): bool
+{
+    $greeting = $userName !== ''
+        ? 'Olá, <strong>' . htmlspecialchars($userName) . '</strong>!'
+        : 'Olá!';
+
+    $subject = t('twofa.title') . ' — ' . t('app.title');
+
+    $html = '
+        <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;
+                    padding:24px;background:#0f172a;color:#e2e8f0;border-radius:12px">
+            <h2 style="color:#E57000;margin-top:0">🔐 ' . htmlspecialchars(t('twofa.code_label')) . '</h2>
+            <p>' . $greeting . '</p>
+            <div style="font-size:2.4em;font-weight:700;letter-spacing:.2em;
+                        text-align:center;padding:20px;background:rgba(229,112,0,.15);
+                        border:1px solid rgba(229,112,0,.4);border-radius:8px;
+                        color:#E57000;margin:20px 0">' . htmlspecialchars($code) . '</div>
+            <p style="color:#94a3b8;font-size:.9em">' . htmlspecialchars(t('twofa.expires')) . ' 5 min.</p>
+        </div>';
+
+    $text = t('twofa.code_label') . ": {$code}\n\n" . t('twofa.expires') . ' 5 min.';
+
+    return mail_send($to, $userName, $subject, $html, $text);
 }
 
 function auth_send_2fa_for_user(int $userId): bool
@@ -398,6 +552,46 @@ function pmg_get(string $path): ?array
     return pmg_request('GET', $path);
 }
 
+/* =====================  SERVIÇOS  ===================== */
+
+function pmg_get_services_status(): array
+{
+    $cfg  = pmg_config();
+    $node = $cfg['pmg']['node'];
+
+    $map = [
+        'pmgproxy'         => ['order' => 1, 'short' => 'proxy'],
+        'pmgpolicy'        => ['order' => 2, 'short' => 'policy'],
+        'pmg-smtp-filter'  => ['order' => 3, 'short' => 'smtp-filter'],
+        'postfix'          => ['order' => 4, 'short' => 'postfix'],
+        'clamav-freshclam' => ['order' => 5, 'short' => 'clamav'],
+    ];
+
+    $data = pmg_get("/nodes/{$node}/services");
+    if (!is_array($data)) return [];
+
+    $result = [];
+    foreach ($data as $svc) {
+        if (!is_array($svc)) continue;
+        $name = (string)($svc['name'] ?? '');
+        if ($name === '' || !isset($map[$name])) continue;
+
+        $state = (string)($svc['state'] ?? 'unknown');
+        $result[] = [
+            'name'      => $name,
+            'short'     => $map[$name]['short'],
+            'order'     => $map[$name]['order'],
+            'desc'      => (string)($svc['desc'] ?? $name),
+            'state'     => $state,
+            'active'    => $state === 'running',
+            'unitstate' => (string)($svc['unitstate'] ?? $state),
+        ];
+    }
+
+    usort($result, fn($a, $b) => $a['order'] <=> $b['order']);
+    return $result;
+}
+
 /* =====================  SYSTEM INFO  ===================== */
 
 function pmg_is_public_ip(string $ip): bool
@@ -475,21 +669,16 @@ function pmg_mail_stats_path(string $period): string
         case 'day':
             return '/statistics/mail?year=' . date('Y')
                  . '&month=' . date('n') . '&day=' . date('j');
-
-        // ⬇️ Novo: últimos 7 dias (janela móvel)
         case 'week':
             $end   = time();
             $start = strtotime('-7 days', $end);
             return '/statistics/mail?starttime=' . $start . '&endtime=' . $end;
-
         case 'semester':
             $end   = time();
             $start = strtotime('-6 months', $end);
             return '/statistics/mail?starttime=' . $start . '&endtime=' . $end;
-
         case 'year':
             return '/statistics/mail?year=' . date('Y');
-
         case 'month':
         default:
             return '/statistics/mail?year=' . date('Y') . '&month=' . date('n');
@@ -500,7 +689,7 @@ function pmg_period_label(string $period): string
 {
     switch ($period) {
         case 'day':      return t('dash.period.day.label', ['date' => date('d/m/Y')]);
-        case 'week':     return t('dash.period.week.label');   // ⬇️ Novo
+        case 'week':     return t('dash.period.week.label');
         case 'semester': return t('dash.period.semester.label');
         case 'year':     return t('dash.period.year.label', ['year' => date('Y')]);
         case 'month':
@@ -663,6 +852,321 @@ function pmg_collect_metrics(?string $period = null): array
         'top_senders'  => pmg_get_top_senders($period, PMG_TOP_LIMIT),
         'top_domains'  => pmg_get_top_domains($period, PMG_TOP_LIMIT),
         'hourly_mail'  => pmg_get_hourly_mail_stats(),
+        'services'     => pmg_get_services_status(),
         'system_info'  => pmg_collect_system_info(),
     ];
+}
+
+/* =====================  INCIDENTES  ===================== */
+
+function incident_check_throttled(int $interval = 60): void
+{
+    $lock = sys_get_temp_dir() . '/pmg_incident_check.lock';
+    if (file_exists($lock) && (time() - filemtime($lock)) < $interval) return;
+    @touch($lock);
+    try {
+        incident_check_and_log();
+    } catch (Throwable $e) {
+        error_log('[INCIDENT] ' . $e->getMessage());
+    }
+}
+
+function incident_check_and_log(): array
+{
+    $cfg  = pmg_config();
+    $node = $cfg['pmg']['node'];
+    $opened   = [];
+    $resolved = [];
+
+    /* ---- 1) Serviços do PMG ---- */
+    $services = pmg_get_services_status();
+    foreach ($services as $svc) {
+        $key = 'service_down:' . $svc['name'];
+        if ($svc['active']) {
+            $inc = db_incident_resolve($key);
+            if ($inc) $resolved[] = $inc;
+        } else {
+            if (!db_incident_find_active($key)) {
+                db_incident_open(
+                    $key,
+                    'service_down',
+                    'critical',
+                    'Serviço parado: ' . $svc['short'],
+                    'O serviço "' . $svc['desc'] . '" (' . $svc['name'] . ') está parado. ' .
+                    'Estado reportado pelo PMG: ' . $svc['state'] . '.'
+                );
+                $inc = db_incident_find_active($key);
+                if ($inc) $opened[] = $inc;
+            }
+        }
+    }
+
+    /* ---- 2) CPU e Memória ---- */
+    $status = pmg_get("/nodes/{$node}/status") ?? [];
+
+    // CPU
+    $cpu = isset($status['cpu']) ? $status['cpu'] * 100 : 0;
+    if ($cpu >= 90) {
+        $since = system_state_get('cpu_high_since');
+        if (!$since || (int)$since === 0) {
+            system_state_set('cpu_high_since', (string)time());
+        } else {
+            $elapsed = time() - (int)$since;
+            if ($elapsed >= 600) {
+                $key = 'high_cpu';
+                if (!db_incident_find_active($key)) {
+                    db_incident_open(
+                        $key,
+                        'high_cpu',
+                        'warning',
+                        'Uso de CPU elevado',
+                        sprintf(
+                            'CPU acima de 90%% por %d minutos consecutivos. Uso atual: %.1f%%.',
+                            (int)floor($elapsed / 60),
+                            $cpu
+                        )
+                    );
+                    $inc = db_incident_find_active($key);
+                    if ($inc) $opened[] = $inc;
+                }
+            }
+        }
+    } else {
+        system_state_set('cpu_high_since', '');
+        $inc = db_incident_resolve('high_cpu');
+        if ($inc) $resolved[] = $inc;
+    }
+
+    // Memória
+    $mem    = $status['memory'] ?? ['used' => 0, 'total' => 1];
+    $memPct = ($mem['total'] ?? 0) > 0 ? ($mem['used'] / $mem['total']) * 100 : 0;
+
+    if ($memPct >= 80) {
+        $key = 'high_memory';
+        if (!db_incident_find_active($key)) {
+            db_incident_open(
+                $key,
+                'high_memory',
+                'warning',
+                'Uso de memória elevado',
+                sprintf(
+                    'Memória acima de 80%% (atual: %.1f%% — %s de %s).',
+                    $memPct,
+                    format_bytes((float)($mem['used']  ?? 0)),
+                    format_bytes((float)($mem['total'] ?? 0))
+                )
+            );
+            $inc = db_incident_find_active($key);
+            if ($inc) $opened[] = $inc;
+        }
+    } else {
+        $inc = db_incident_resolve('high_memory');
+        if ($inc) $resolved[] = $inc;
+    }
+
+    /* ---- 3) Notificações ---- */
+    foreach ($opened as $inc) {
+        if (!empty($inc) && empty($inc['notified_at'])) {
+            incident_notify_admins($inc);
+            db_incident_mark_notified((int)$inc['id']);
+        }
+    }
+    foreach ($resolved as $inc) {
+        if (!empty($inc) && empty($inc['resolved_notified'])) {
+            incident_notify_admins_resolved($inc);
+            db_incident_mark_resolved_notified((int)$inc['id']);
+        }
+    }
+
+    return ['opened' => $opened, 'resolved' => $resolved];
+}
+
+function incident_notify_admins(array $incident): void
+{
+    $admins = [];
+    foreach (db_list_users() as $u) {
+        if ($u['role'] === 'admin' && (int)$u['active']) {
+            $admins[] = $u;
+        }
+    }
+    if (empty($admins)) {
+        error_log('[INCIDENT] Nenhum admin ativo para notificar.');
+        return;
+    }
+    foreach ($admins as $admin) {
+        try { incident_send_email($admin, $incident); }
+        catch (Throwable $e) { error_log('[INCIDENT MAIL] ' . $e->getMessage()); }
+    }
+}
+
+function incident_notify_admins_resolved(array $incident): void
+{
+    $admins = [];
+    foreach (db_list_users() as $u) {
+        if ($u['role'] === 'admin' && (int)$u['active']) {
+            $admins[] = $u;
+        }
+    }
+    if (empty($admins)) return;
+
+    foreach ($admins as $admin) {
+        try { incident_send_resolved_email($admin, $incident); }
+        catch (Throwable $e) { error_log('[INCIDENT MAIL] ' . $e->getMessage()); }
+    }
+}
+
+function incident_format_duration(array $inc): string
+{
+    $start = strtotime($inc['started_at']);
+    $end   = !empty($inc['resolved_at']) ? strtotime($inc['resolved_at']) : time();
+    $sec   = max(0, $end - $start);
+
+    $d = floor($sec / 86400);
+    $h = floor(($sec % 86400) / 3600);
+    $m = floor(($sec % 3600) / 60);
+
+    if ($d > 0) return sprintf('%dd %dh %dm', $d, $h, $m);
+    if ($h > 0) return sprintf('%dh %dm', $h, $m);
+    return sprintf('%dm', $m);
+}
+
+function incident_send_email(array $admin, array $incident): bool
+{
+    $colors = ['critical' => '#ef4444', 'warning' => '#f59e0b'];
+    $types  = [
+        'service_down' => 'Serviço parado',
+        'high_cpu'     => 'CPU elevada',
+        'high_memory'  => 'Memória elevada',
+    ];
+    $sevColor = $colors[$incident['severity']] ?? '#f59e0b';
+    $typeLbl  = $types[$incident['type']]      ?? 'Incidente';
+
+    $dashboardUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
+        . ($_SERVER['HTTP_HOST'] ?? 'localhost')
+        . rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/'), '/')
+        . '/incidents.php';
+
+    $subject = '[PMG ALERTA] ' . $incident['subject'];
+
+    $html = '
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;
+                    padding:24px;background:#0f172a;color:#e2e8f0;border-radius:12px">
+            <div style="font-size:2em;margin-bottom:8px">🚨</div>
+            <h2 style="color:' . $sevColor . ';margin:0 0 8px 0">' . htmlspecialchars($incident['subject']) . '</h2>
+            <p style="color:#94a3b8;margin:0 0 16px 0">' . htmlspecialchars($typeLbl) . ' · Severidade ' .
+                strtoupper($incident['severity']) . '</p>
+
+            <div style="padding:16px;background:rgba(0,0,0,0.3);border-radius:8px;
+                        border-left:4px solid ' . $sevColor . '">
+                <p style="margin:0;color:#e2e8f0">' . nl2br(htmlspecialchars($incident['detail'])) . '</p>
+            </div>
+
+            <table style="width:100%;margin-top:20px;font-size:.9em;color:#94a3b8;border-collapse:collapse">
+                <tr>
+                    <td style="padding:6px 0">Início:</td>
+                    <td style="padding:6px 0;color:#e2e8f0">' . htmlspecialchars($incident['started_at']) . '</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0">ID do incidente:</td>
+                    <td style="padding:6px 0;color:#e2e8f0">#' . (int)$incident['id'] . '</td>
+                </tr>
+            </table>
+
+            <p style="margin-top:24px">
+                <a href="' . htmlspecialchars($dashboardUrl) . '"
+                   style="display:inline-block;padding:10px 18px;background:#E57000;
+                          color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
+                    Ver no dashboard
+                </a>
+            </p>
+        </div>';
+
+    $text = $incident['subject'] . "\n\n" . $incident['detail'] . "\n\n" . $dashboardUrl;
+
+    return mail_send($admin['email'], $admin['name'] ?? '', $subject, $html, $text);
+}
+
+function incident_send_resolved_email(array $admin, array $incident): bool
+{
+    $types = [
+        'service_down' => 'Serviço',
+        'high_cpu'     => 'CPU',
+        'high_memory'  => 'Memória',
+    ];
+    $typeLbl  = $types[$incident['type']] ?? 'Incidente';
+    $duration = incident_format_duration($incident);
+
+    $dashboardUrl = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://'
+        . ($_SERVER['HTTP_HOST'] ?? 'localhost')
+        . rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/'), '/')
+        . '/incidents.php';
+
+    $subject = '[PMG RESOLVIDO] ' . $incident['subject'];
+
+    $html = '
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;
+                    padding:24px;background:#0f172a;color:#e2e8f0;border-radius:12px">
+            <div style="font-size:2em;margin-bottom:8px">✅</div>
+            <h2 style="color:#22c55e;margin:0 0 8px 0">Incidente resolvido</h2>
+            <p style="color:#94a3b8;margin:0 0 16px 0">' . htmlspecialchars($typeLbl) . ' normalizado</p>
+
+            <div style="padding:16px;background:rgba(34,197,94,0.1);border-radius:8px;
+                        border-left:4px solid #22c55e">
+                <p style="margin:0;color:#e2e8f0;font-weight:600">' . htmlspecialchars($incident['subject']) . '</p>
+                <p style="margin:8px 0 0 0;color:#94a3b8;font-size:.9em">' . nl2br(htmlspecialchars($incident['detail'])) . '</p>
+            </div>
+
+            <table style="width:100%;margin-top:20px;font-size:.9em;color:#94a3b8;border-collapse:collapse">
+                <tr>
+                    <td style="padding:6px 0">Início do incidente:</td>
+                    <td style="padding:6px 0;color:#e2e8f0">' . htmlspecialchars($incident['started_at']) . '</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0">Resolvido em:</td>
+                    <td style="padding:6px 0;color:#e2e8f0">' . htmlspecialchars($incident['resolved_at']) . '</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0">Duração total:</td>
+                    <td style="padding:6px 0;color:#e2e8f0">' . htmlspecialchars($duration) . '</td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0">ID do incidente:</td>
+                    <td style="padding:6px 0;color:#e2e8f0">#' . (int)$incident['id'] . '</td>
+                </tr>
+            </table>
+
+            <p style="margin-top:24px">
+                <a href="' . htmlspecialchars($dashboardUrl) . '"
+                   style="display:inline-block;padding:10px 18px;background:#22c55e;
+                          color:#fff;text-decoration:none;border-radius:8px;font-weight:600">
+                    Ver no dashboard
+                </a>
+            </p>
+        </div>';
+
+    $text = "Incidente resolvido: " . $incident['subject']
+        . "\n\nInício: " . $incident['started_at']
+        . "\nResolvido: " . $incident['resolved_at']
+        . "\nDuração: " . $duration
+        . "\n\n" . $dashboardUrl;
+
+    return mail_send($admin['email'], $admin['name'] ?? '', $subject, $html, $text);
+}
+
+/* =====================  HELPERS  ===================== */
+
+function format_bytes(float $bytes, int $precision = 2): string
+{
+    $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    $i = 0;
+    while ($bytes >= 1024 && $i < count($units) - 1) { $bytes /= 1024; $i++; }
+    return round($bytes, $precision) . ' ' . $units[$i];
+}
+
+function format_uptime(int $seconds): string
+{
+    $d = floor($seconds / 86400);
+    $h = floor(($seconds % 86400) / 3600);
+    $m = floor(($seconds % 3600) / 60);
+    return sprintf('%dd %dh %dm', $d, $h, $m);
 }

@@ -5,7 +5,6 @@ auth_start_session();
 if (!auth_is_logged_in()) { header('Location: login.php'); exit; }
 
 $cfg = pmg_config();
-date_default_timezone_set($cfg['dashboard']['timezone'] ?? 'UTC');
 
 $me      = auth_current_user();
 $refresh = (int)($cfg['dashboard']['refresh_seconds'] ?? 30);
@@ -15,9 +14,10 @@ $validPeriods  = PMG_PERIODS;
 $defaultPeriod = pmg_validate_period(null);
 $initialPeriod = pmg_validate_period($_GET['period'] ?? null);
 
-$loggedName = htmlspecialchars($me['name'] ?? '', ENT_QUOTES, 'UTF-8');
-$loggedUser = htmlspecialchars($me['username'] ?? '', ENT_QUOTES, 'UTF-8');
-$isAdmin    = ($me['role'] ?? '') === 'admin';
+$loggedName      = htmlspecialchars($me['name'] ?? '', ENT_QUOTES, 'UTF-8');
+$loggedUser      = htmlspecialchars($me['username'] ?? '', ENT_QUOTES, 'UTF-8');
+$isAdmin         = ($me['role'] ?? '') === 'admin';
+$activeIncidents = db_incident_count_active();
 
 $initialPeriodLabel = pmg_period_label($initialPeriod);
 $topLimit           = PMG_TOP_LIMIT;
@@ -35,6 +35,8 @@ $jsStrings = [
     'spamRate'     => t('dash.chart.spam_rate'),
     'pregreetRate' => t('dash.chart.pregreet_rate'),
     'topEmpty'     => t('dash.top.empty'),
+    'svcRunning'   => t('dash.services.running'),
+    'svcStopped'   => t('dash.services.stopped'),
 ];
 ?>
 <!DOCTYPE html>
@@ -73,11 +75,30 @@ $jsStrings = [
                 <span class="dot" id="statusDot"></span>
                 <span id="statusText"><?= htmlspecialchars(t('dash.status.loading')) ?></span>
             </div>
+
             <?php if ($isAdmin): ?>
                 <a href="users.php" class="btn-secondary" title="<?= htmlspecialchars(t('header.users_tooltip')) ?>">
                     👥 <?= htmlspecialchars(t('header.users')) ?>
                 </a>
             <?php endif; ?>
+
+            <a href="incidents.php"
+               id="incidentsLink"
+               class="btn-secondary <?= $activeIncidents > 0 ? 'btn-alert' : '' ?>"
+               title="<?= htmlspecialchars(t('header.incidents_tooltip')) ?>">
+                🚨 <?= htmlspecialchars(t('header.incidents')) ?>
+                <span class="badge-count" id="incidentsBadge" <?= $activeIncidents > 0 ? '' : 'style="display:none"' ?>>
+                    <?= (int)$activeIncidents ?>
+                </span>
+            </a>
+
+            <button type="button"
+                    id="soundToggle"
+                    class="sound-toggle"
+                    title="<?= htmlspecialchars(t('alert.sound_toggle')) ?>">
+                <span id="soundIcon">🔔</span>
+            </button>
+
             <div class="user-menu">
                 <span class="user-name" title="<?= $loggedUser ?>">
                     👤 <?= $loggedName ?>
@@ -93,7 +114,6 @@ $jsStrings = [
             <button class="period-btn" data-period="day" role="tab">
                 <span class="icon">📅</span><span class="txt"><?= htmlspecialchars(t('dash.period.day')) ?></span>
             </button>
-            <!-- ⬇️ Novo botão: Semanal -->
             <button class="period-btn" data-period="week" role="tab">
                 <span class="icon">📈</span><span class="txt"><?= htmlspecialchars(t('dash.period.week')) ?></span>
             </button>
@@ -107,6 +127,14 @@ $jsStrings = [
                 <span class="icon">📊</span><span class="txt"><?= htmlspecialchars(t('dash.period.year')) ?></span>
             </button>
         </div>
+
+        <div class="services-bar" id="servicesBar"
+             title="<?= htmlspecialchars(t('dash.services.tooltip')) ?>">
+            <div class="services-list" id="servicesList">
+                <div class="status loading"><span class="dot"></span><span class="status-name">—</span></div>
+            </div>
+        </div>
+
         <div class="period-badge">
             <span class="dot-live"></span>
             <span id="periodLabel"><?= htmlspecialchars($initialPeriodLabel) ?></span>
@@ -258,6 +286,7 @@ const TOP_LIMIT = <?= (int)$topLimit ?>;
 const T = <?= json_encode($jsStrings, JSON_UNESCAPED_UNICODE) ?>;
 const LOCALE = <?= json_encode($currentLang) ?>;
 
+/* ==================== Helpers ==================== */
 function num(v, f = 0) { return (typeof v === 'number' && isFinite(v)) ? v : f; }
 function fmtNum(v) { return num(v).toLocaleString(LOCALE); }
 function fmtPct(v, d = 2) { return num(v).toFixed(d) + '%'; }
@@ -281,6 +310,7 @@ function setBar(id, pct, warn = 75, bad = 90) {
 function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
 
+/* ==================== Hover nos cards ==================== */
 document.querySelectorAll('.card').forEach(card => {
     card.addEventListener('mousemove', e => {
         const r = card.getBoundingClientRect();
@@ -289,6 +319,7 @@ document.querySelectorAll('.card').forEach(card => {
     });
 });
 
+/* ==================== Portas ==================== */
 function renderPort(badgeId, textId, isOpen) {
     const badge = document.getElementById(badgeId), text = document.getElementById(textId);
     if (!badge || !text) return;
@@ -296,6 +327,203 @@ function renderPort(badgeId, textId, isOpen) {
     else { badge.classList.remove('up'); badge.classList.add('down'); text.textContent = T.closed; }
 }
 
+/* ============================================================
+ *  ALARME CONTÍNUO
+ *  - Começa quando há incidentes ativos.
+ *  - Repete em loop até o usuário clicar em "🚨 Incidentes"
+ *    (a navegação para outra página mata o loop) ou desligar o som.
+ *  - Para automaticamente se não houver mais incidentes.
+ * ============================================================ */
+
+let audioCtx        = null;
+let soundEnabled    = (localStorage.getItem('pmg_sound') ?? '1') === '1';
+let alarmLoop       = null;         // setInterval handle
+let alarmRunning    = false;
+let alarmShouldRun  = false;        // há incidentes ativos?
+let audioUnlocked   = false;        // o navegador já liberou o áudio?
+
+/* ---- Botão de mute ---- */
+function updateSoundButton() {
+    const btn  = document.getElementById('soundToggle');
+    const icon = document.getElementById('soundIcon');
+    if (!btn || !icon) return;
+    if (soundEnabled) {
+        btn.classList.remove('muted');
+        icon.textContent = '🔔';
+    } else {
+        btn.classList.add('muted');
+        icon.textContent = '🔕';
+    }
+}
+
+/* ---- Desbloqueia o AudioContext na 1ª interação do usuário ---- */
+function unlockAudio() {
+    try {
+        if (!audioCtx) {
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            audioCtx = new Ctx();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume().then(() => {
+                audioUnlocked = audioCtx.state === 'running';
+                if (alarmShouldRun && soundEnabled) startAlarmLoop();
+            });
+        } else if (audioCtx.state === 'running') {
+            audioUnlocked = true;
+            if (alarmShouldRun && soundEnabled) startAlarmLoop();
+        }
+    } catch (e) { /* silencioso */ }
+}
+document.addEventListener('click',      unlockAudio, { once: true, capture: true });
+document.addEventListener('keydown',    unlockAudio, { once: true, capture: true });
+document.addEventListener('touchstart', unlockAudio, { once: true, capture: true });
+
+/* ---- Um ciclo do padrão de alarme: três bipes curtos + pausa ---- */
+function playAlarmPattern() {
+    if (!soundEnabled || !audioCtx || audioCtx.state !== 'running') return;
+
+    try {
+        const now = audioCtx.currentTime;
+
+        // 3 bipes rápidos, tipo "alarme de relógio"
+        for (let i = 0; i < 3; i++) {
+            const start = i * 0.22;
+            const osc   = audioCtx.createOscillator();
+            const gain  = audioCtx.createGain();
+
+            osc.type = 'square';   // som mais "agressivo" que sine
+            osc.frequency.value = 990;   // um pouco mais agudo
+
+            gain.gain.setValueAtTime(0.0001,             now + start);
+            gain.gain.exponentialRampToValueAtTime(0.22, now + start + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + start + 0.15);
+
+            osc.connect(gain).connect(audioCtx.destination);
+            osc.start(now + start);
+            osc.stop(now + start + 0.18);
+        }
+    } catch (e) { /* silencioso */ }
+}
+
+/* ---- Loop do alarme ---- */
+function startAlarmLoop() {
+    if (alarmRunning) return;
+    if (!soundEnabled) return;
+    if (!audioCtx || audioCtx.state !== 'running') return;   // aguarda desbloqueio
+
+    alarmRunning = true;
+    playAlarmPattern();                                       // toca imediatamente
+    alarmLoop = setInterval(() => {
+        if (!alarmRunning || !soundEnabled || !alarmShouldRun) {
+            stopAlarmLoop();
+            return;
+        }
+        playAlarmPattern();
+    }, 2500);                                                 // repete a cada 2,5s
+}
+
+function stopAlarmLoop() {
+    alarmRunning = false;
+    if (alarmLoop) {
+        clearInterval(alarmLoop);
+        alarmLoop = null;
+    }
+}
+
+/* ---- Aplica o estado desejado (ativo/inativo) ao alarme ---- */
+function setAlarmState(hasIncidents) {
+    alarmShouldRun = !!hasIncidents;
+    if (alarmShouldRun && soundEnabled) {
+        startAlarmLoop();
+    } else {
+        stopAlarmLoop();
+    }
+}
+
+/* ---- Botão de mute ---- */
+document.getElementById('soundToggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('pmg_sound', soundEnabled ? '1' : '0');
+    updateSoundButton();
+
+    if (soundEnabled) {
+        unlockAudio();
+        // Feedback curto confirmando que voltou a tocar
+        setTimeout(() => {
+            try {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.frequency.value = 1200;
+                gain.gain.setValueAtTime(0.10, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.10);
+                osc.connect(gain).connect(audioCtx.destination);
+                osc.start(now); osc.stop(now + 0.12);
+            } catch (e) {}
+        }, 50);
+        // Reavalia se deve tocar alarme agora
+        if (alarmShouldRun) startAlarmLoop();
+    } else {
+        stopAlarmLoop();
+    }
+});
+
+/* ---- Para o alarme imediatamente ao clicar em Incidentes ---- */
+document.getElementById('incidentsLink').addEventListener('click', () => {
+    alarmShouldRun = false;
+    stopAlarmLoop();
+});
+
+/* ---- Para o alarme quando a página é fechada/recarregada ---- */
+window.addEventListener('beforeunload', stopAlarmLoop);
+window.addEventListener('pagehide',     stopAlarmLoop);
+
+updateSoundButton();
+
+/* ==================== Badge de incidentes ==================== */
+function updateIncidentsBadge(count) {
+    const link  = document.getElementById('incidentsLink');
+    const badge = document.getElementById('incidentsBadge');
+    if (!link || !badge) return;
+
+    if (count > 0) {
+        link.classList.add('btn-alert');
+        badge.style.display = '';
+        badge.textContent = count;
+    } else {
+        link.classList.remove('btn-alert');
+        badge.style.display = 'none';
+        badge.textContent = '0';
+    }
+}
+
+/* ==================== Status dos serviços ==================== */
+function renderServices(services) {
+    const container = document.getElementById('servicesList');
+    if (!container) return;
+
+    const list = Array.isArray(services) ? services : [];
+    if (list.length === 0) {
+        container.innerHTML = '<div class="status loading"><span class="dot"></span><span class="status-name">—</span></div>';
+        return;
+    }
+
+    container.innerHTML = list.map(svc => {
+        const dotCls  = svc.active ? '' : 'err';
+        const pillCls = svc.active ? '' : 'down';
+        const stateLabel = svc.active ? T.svcRunning : T.svcStopped;
+        const title = `${svc.desc} — ${stateLabel} (${svc.state})`;
+        const shortName = svc.short || svc.name;
+        return `<div class="status ${pillCls}" title="${esc(title)}">
+            <span class="dot ${dotCls}"></span>
+            <span class="status-name">${esc(shortName)}</span>
+        </div>`;
+    }).join('');
+}
+
+/* ==================== Top ==================== */
 function renderTopSenders(list) {
     const tb = document.querySelector('#topSendersTable tbody'); if (!tb) return;
     const arr = Array.isArray(list) ? list.slice(0, TOP_LIMIT) : [];
@@ -316,6 +544,7 @@ function renderTopDomains(list) {
     }).join('');
 }
 
+/* ==================== Gráfico 24h ==================== */
 let mailChart = null;
 function renderMailChart(hourly) {
     const canvas = document.getElementById('mailChart');
@@ -381,6 +610,7 @@ function renderMailChart(hourly) {
     });
 }
 
+/* ==================== Período ==================== */
 function getInitialPeriod() {
     const u = new URLSearchParams(location.search).get('period');
     if (u && VALID_PERIODS.includes(u)) return u;
@@ -419,6 +649,7 @@ function showLoading(s) {
     else ov.classList.remove('show');
 }
 
+/* ==================== Carga de métricas ==================== */
 async function loadMetrics() {
     const dot = document.getElementById('statusDot'), text = document.getElementById('statusText');
     try {
@@ -429,6 +660,7 @@ async function loadMetrics() {
         if (d && d.error) throw new Error(d.error);
         if (!d) throw new Error('empty');
 
+        // Sistema
         const cpu = num(d.cpu);
         setText('cpu', cpu.toFixed(1) + '%');
         const ld = Array.isArray(d.loadavg) ? d.loadavg : [0,0,0];
@@ -455,6 +687,7 @@ async function loadMetrics() {
         setText('trafficOut', humanBytes(tr.out));
         setText('uptime',     humanUptime(d.uptime));
 
+        // Fluxo
         const m = d.mails || {};
         setText('mailsIn',    fmtNum(m.incoming));
         setText('mailsOut',   fmtNum(m.outgoing));
@@ -474,7 +707,14 @@ async function loadMetrics() {
         renderMailChart(d.hourly_mail || []);
         renderTopSenders(d.top_senders || []);
         renderTopDomains(d.top_domains || []);
+        renderServices(d.services || []);
 
+        // ===== INCIDENTES =====
+        const incCount = num(d.incidents_active);
+        updateIncidentsBadge(incCount);
+        setAlarmState(incCount > 0);
+
+        // Rodapé
         const si = d.system_info || {};
         setText('footerHostname', si.hostname || '--');
         setText('footerPublicIp', si.public_ip || '--');

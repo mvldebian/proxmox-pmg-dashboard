@@ -408,3 +408,271 @@ footer {
     .grid-flux { grid-template-columns:repeat(2, 1fr); }
     .chart-card { height:220px; }
 }
+
+/* ===== Barra de status dos serviços ===== */
+.services-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 12px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    font-size: .75em;
+    flex-wrap: wrap;
+}
+.services-label {
+    color: var(--text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: .02em;
+}
+.services-list {
+    display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
+}
+.service-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: .95em;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: transform .2s ease;
+    cursor: default;
+}
+.service-badge:hover { transform: translateY(-1px); }
+.service-badge .service-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 6px currentColor;
+    flex-shrink: 0;
+}
+.service-badge.up {
+    background: rgba(34, 197, 94, 0.15);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: var(--ok);
+}
+.service-badge.up .service-dot { animation: pulse 2.5s infinite; }
+.service-badge.down {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: var(--bad);
+}
+.service-badge.down .service-dot { animation: pulse 1s infinite; }
+.service-badge.loading {
+    background: rgba(148, 163, 184, 0.1);
+    border-color: rgba(148, 163, 184, 0.3);
+    color: var(--text-muted);
+}
+.service-badge .service-name {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: .9em;
+    letter-spacing: -.02em;
+}
+@media (max-width: 1400px) {
+    .service-badge .service-name { display: none; }
+    .service-badge { padding: 2px 6px; }
+}
+@media (max-width: 1000px) {
+    .services-bar { display: none; }
+}
+
+/* ===== Barra de status dos serviços do PMG ===== */
+.services-bar {
+    display: flex; align-items: center; gap: 6px;
+    flex-wrap: wrap;
+}
+.services-list {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+}
+/* Cada serviço reaproveita o visual do badge "Conectado" */
+.services-list .status {
+    padding: 4px 10px;
+    font-size: .75em;
+    gap: 6px;
+}
+.services-list .status.down {
+    color: #fca5a5;
+    border-color: rgba(239,68,68,0.3);
+    background: rgba(239,68,68,0.08);
+}
+.services-list .status.loading {
+    color: var(--text-muted);
+}
+.services-list .status .dot {
+    width: 8px; height: 8px;
+}
+.services-list .status-name {
+    font-family: ui-monospace, "SF Mono", Consolas, monospace;
+    font-size: 1em;
+    font-weight: 600;
+    letter-spacing: -.02em;
+    color: inherit;
+}
+
+@media (max-width: 1200px) {
+    .services-list .status-name { display: none; }
+    .services-list .status { padding: 4px 6px; }
+}
+@media (max-width: 900px) {
+    .services-bar { display: none; }
+}
+
+/* ===== Botão de mute do som ===== */
+.sound-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: rgba(229,112,0,0.15);
+    border: 1px solid rgba(229,112,0,0.35);
+    border-radius: 50%;
+    color: var(--proxmox-orange);
+    font-size: 1em;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+    padding: 0;
+    font-family: inherit;
+}
+.sound-toggle:hover {
+    background: rgba(229,112,0,0.25);
+    transform: translateY(-1px);
+}
+.sound-toggle.muted {
+    background: rgba(148,163,184,0.1);
+    border-color: rgba(148,163,184,0.3);
+    color: var(--text-muted);
+}
+
+/* ===== Menu de Incidentes: pisca quando ativo ===== */
+.btn-secondary.btn-alert {
+    background: rgba(239,68,68,0.18);
+    border-color: rgba(239,68,68,0.55);
+    color: #fca5a5;
+    position: relative;
+    animation:
+        incident-blink 1.2s ease-in-out infinite,
+        incident-glow  1.6s ease-out infinite;
+}
+.btn-secondary.btn-alert:hover {
+    background: rgba(239,68,68,0.30);
+    animation-play-state: paused;
+}
+.btn-secondary.btn-alert .badge-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px;
+    padding: 0 5px;
+    margin-left: 4px;
+    border-radius: 10px;
+    background: var(--bad);
+    color: #fff;
+    font-size: .85em; font-weight: 700; line-height: 1;
+    box-shadow: 0 0 8px rgba(239,68,68,0.8);
+    animation: badge-pulse 1s ease-in-out infinite;
+}
+/* Mantém o badge sempre visível quando não está piscando */
+.btn-secondary .badge-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px;
+    padding: 0 5px;
+    margin-left: 4px;
+    border-radius: 10px;
+    background: var(--bad);
+    color: #fff;
+    font-size: .85em; font-weight: 700; line-height: 1;
+}
+
+@keyframes incident-blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+}
+@keyframes incident-glow {
+    0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+    70%  { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+@keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.15); }
+}
+
+/* ===== Flash vermelho na tela quando dispara o alerta ===== */
+body.alert-flash::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    background: rgba(239,68,68,0.10);
+    animation: alert-flash-anim 0.5s ease-out;
+}
+@keyframes alert-flash-anim {
+    0%   { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* ===== Botão de mute do som ===== */
+.sound-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: rgba(229,112,0,0.15);
+    border: 1px solid rgba(229,112,0,0.35);
+    border-radius: 50%;
+    color: var(--proxmox-orange);
+    font-size: 1em;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+    padding: 0;
+    font-family: inherit;
+}
+.sound-toggle:hover {
+    background: rgba(229,112,0,0.25);
+    transform: translateY(-1px);
+}
+.sound-toggle.muted {
+    background: rgba(148,163,184,0.1);
+    border-color: rgba(148,163,184,0.3);
+    color: var(--text-muted);
+}
+
+/* ===== Menu de Incidentes: pisca quando ativo ===== */
+.btn-secondary.btn-alert {
+    background: rgba(239,68,68,0.18);
+    border-color: rgba(239,68,68,0.55);
+    color: #fca5a5;
+    animation:
+        incident-blink 1.2s ease-in-out infinite,
+        incident-glow  1.6s ease-out infinite;
+}
+.btn-secondary.btn-alert:hover {
+    background: rgba(239,68,68,0.30);
+    animation-play-state: paused;
+}
+.btn-secondary.btn-alert .badge-count {
+    box-shadow: 0 0 8px rgba(239,68,68,0.8);
+    animation: badge-pulse 1s ease-in-out infinite;
+}
+
+/* Badge base (usado mesmo sem alerta) */
+.btn-secondary .badge-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px;
+    padding: 0 5px;
+    margin-left: 4px;
+    border-radius: 10px;
+    background: var(--bad);
+    color: #fff;
+    font-size: .85em; font-weight: 700; line-height: 1;
+}
+
+@keyframes incident-blink {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.35; }
+}
+@keyframes incident-glow {
+    0%   { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); }
+    70%  { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+    100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+}
+@keyframes badge-pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.15); }
+}
+

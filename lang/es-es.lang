@@ -2,16 +2,22 @@
 # Español — Traducciones del PMG Dashboard
 # ============================================================
 
+# ---------- App ----------
 app.title = Proxmox Mail Gateway
 app.subtitle = Panel de monitoreo en tiempo real
 app.uptime_tooltip = Tiempo activo del PMG
+alert.sound_toggle = Activar/desactivar sonido de alerta
 
+# ---------- Header ----------
 header.users = Usuarios
 header.users_tooltip = Gestionar usuarios
 header.logout = Salir
 header.role_admin = ADMIN
 header.language = Idioma
+header.incidents = Incidentes
+header.incidents_tooltip = Ver historial de incidentes
 
+# ---------- Login ----------
 login.title = Acceso
 login.subtitle = Introduce tu correo corporativo para recibir el código de acceso
 login.email_label = Correo
@@ -29,6 +35,7 @@ login.err.user_disabled = Cuenta desactivada. Contacta al administrador.
 login.err.locked = Acceso bloqueado. Inténtalo en {minutes} minuto(s).
 login.err.smtp = Error al enviar el código por correo. Contacta al administrador.
 
+# ---------- Admin login ----------
 admin.title = Acceso Administrativo
 admin.badge = 🛡️ Solo administradores
 admin.username_label = Usuario administrador
@@ -44,6 +51,7 @@ admin.err.locked = Cuenta bloqueada. Inténtalo en {minutes} minuto(s).
 admin.err.smtp = Error al enviar el código por correo.
 admin.err.captcha = Verificación anti-bot fallida. Inténtalo de nuevo.
 
+# ---------- 2FA ----------
 twofa.title = Verificación en dos pasos
 twofa.hello = Hola, {name}
 twofa.sent = Enviamos un código de 6 dígitos a
@@ -54,6 +62,7 @@ twofa.back = ← Volver
 twofa.err.format = Introduce el código de 6 dígitos enviado por correo.
 twofa.err.wrong = Código incorrecto. Intentos restantes: {attempts}
 
+# ---------- Dashboard: Períodos ----------
 dash.period.day = Diario
 dash.period.week = Semanal
 dash.period.month = Mensual
@@ -65,6 +74,7 @@ dash.period.month.label = Mes actual ({date})
 dash.period.semester.label = Últimos 6 meses
 dash.period.year.label = Año actual ({year})
 
+# ---------- Dashboard: Sistema ----------
 dash.system.cpu = CPU
 dash.system.ram = RAM
 dash.system.swap = Swap
@@ -73,6 +83,7 @@ dash.system.traffic_in = Tráfico In
 dash.system.traffic_out = Tráfico Out
 dash.system.total_period = total en el período
 
+# ---------- Dashboard: Flujo ----------
 dash.flow.title = Flujo de Mensajes
 dash.flow.received = Recibidos
 dash.flow.sent = Enviados
@@ -89,6 +100,7 @@ dash.flow.pregreet = PREGREET
 dash.flow.spam_rate = Tasa Spam
 dash.flow.avg_time = T. Medio
 
+# ---------- Dashboard: Gráfico ----------
 dash.chart.title = Volumen en las últimas 24 horas
 dash.chart.received = Recibidos
 dash.chart.spam = Spam
@@ -98,6 +110,7 @@ dash.chart.volume = Volumen
 dash.chart.rate = Tasa (%)
 dash.chart.hour = Hora
 
+# ---------- Dashboard: Top ----------
 dash.top.senders = Top {count} Remitentes (Correo)
 dash.top.domains = Top {count} Dominios Remitentes
 dash.top.sender = Remitente
@@ -109,21 +122,47 @@ dash.top.spam = Spam
 dash.top.empty = Sin datos en el período
 dash.top.loading = Cargando...
 
+# ---------- Dashboard: Estado ----------
 dash.status.connected = Conectado
 dash.status.loading = Cargando...
 dash.status.error = Error
 
+# ---------- Dashboard: Pie ----------
 dash.footer.pmg = PMG
 dash.footer.public_ip = IP Público
 dash.footer.relay_ext = Relay Ext
 dash.footer.relay_int = Relay Int
 dash.footer.updated = Actualizado
 dash.footer.refresh = Refresh
-
 dash.port.open = Abierto
 dash.port.closed = Cerrado
 dash.port.checking = ...
 
+# ---------- Dashboard: Servicios ----------
+dash.services.label = Servicios
+dash.services.tooltip = Estado de los servicios del PMG
+dash.services.running = En ejecución
+dash.services.stopped = Detenido
+
+# ---------- Incidentes ----------
+inc.title = Incidentes
+inc.subtitle = Historial de eventos y alertas del PMG
+inc.back = ← Dashboard
+inc.filter.all = Todos
+inc.filter.active = Activos
+inc.filter.resolved = Resueltos
+inc.th.started = Inicio
+inc.th.duration = Duración
+inc.th.severity = Severidad
+inc.th.subject = Descripción
+inc.th.status = Estado
+inc.state.active = ACTIVO
+inc.state.resolved = RESUELTO
+inc.resolve = Resolver
+inc.confirm_resolve = ¿Marcar este incidente como resuelto?
+inc.empty = No se han registrado incidentes. Todo funciona correctamente. ✨
+
+# ---------- Usuarios ----------
 users.title = Gestión de Usuarios
 users.count = {count} usuario(s)
 users.new = ➕ Nuevo usuario
@@ -146,6 +185,7 @@ users.delete_tooltip = Eliminar
 users.delete_confirm = ¿Eliminar al usuario {username}?
 users.empty = Ningún usuario registrado.
 
+# ---------- Editar usuario ----------
 edit.title.new = Nuevo Usuario
 edit.title.edit = Editar Usuario
 edit.name = Nombre completo
@@ -181,5 +221,6 @@ edit.err.username_taken = Este usuario ya está en uso.
 edit.err.email_taken = Este correo ya está registrado.
 edit.err.save = Error al guardar: {error}
 
+# ---------- Idioma ----------
 lang.changed = Idioma cambiado correctamente
 lang.select = Seleccionar idioma
