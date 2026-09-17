@@ -4,7 +4,8 @@ Dashboard web para monitoramento em tempo real do **Proxmox Mail Gateway (PMG)**
 com suporte a múltiplos idiomas e autenticação em duas etapas.
 
 
-<img width="1644" height="946" alt="image" src="https://github.com/user-attachments/assets/3aed191c-463d-42e5-b3c7-0ba83f971a2a" />
+<img width="1626" height="949" alt="image" src="https://github.com/user-attachments/assets/a5715f6f-83e7-41c7-b41e-d75d05f3577f" />
+
 
 
 
